@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>部件學習</title>
+  <style>
+    @font-face {
+      font-family: 'BpmfIansui-Regular';
+      src: url('BpmfIansui-Regular.ttf') format('truetype');
+    }
+
+    body {
+      font-family: 'BpmfIansui-Regular', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 50px;
+      position: relative;
+    }
+
+    .main-character {
+      font-size: 200px;
+      color: #3e64ff;
+      margin-bottom: 20px;
+    }
+
+    .options-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .option-box {
+      border: 2px solid #ccc;
+      padding: 10px 20px;
+      text-align: center;
+      font-size: 60px;
+      background-color: #f0f8ff;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .word-text {
+      font-size: 24px;
+      display: block;
+      margin-top: 5px;
+    }
+
+    .step-container {
+      display: none;
+      gap: 20px;
+      margin-bottom: 30px;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .step-box {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      border: 2px dashed #aaa;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    .step-box.active {
+      display: flex;
+      animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .step-character {
+      font-size: 150px;
+      margin-bottom: 10px;
+    }
+
+    .step-word {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .input-box {
+      font-family: 'BpmfIansui-Regular', sans-serif;
+      font-size: 28px;
+      height: 50px;
+      width: 300px;
+      padding: 10px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .display-area {
+      margin-bottom: 10px;
+      font-size: 20px;
+      color: #555;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #90caf9;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .home-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: none;
+      background-color: #ffcc80;
+    }
+
+    .timer {
+      position: absolute;
+      top: 20px;
+      right: 120px;
+      font-size: 20px;
+      color: #333;
+      background-color: #e0f7fa;
+      padding: 8px 16px;
+      border-radius: 10px;
+    }
+
+    .success-feedback {
+      font-size: 24px;
+      color: green;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="timer" id="timer">時間：0 秒</div>
+  <button class="home-button" onclick="goHome()">Next</button>
+
+  <div class="main-character" id="mainChar">青</div>
+  <div class="options-container" id="optionsContainer"></div>
+  <div class="step-container" id="stepContainer"></div>
+
+  <script>
+    let currentStep = 0;
+    let groupIndex = 0;
+    let timer = 0;
+    let timerInterval;
+    let hasStarted = false;
+
+    const wordGroups = [
+      {
+        main: '青',
+        options: [
+          { char: '清', word: '清楚' },
+          { char: '請', word: '請問' },
+          { char: '精', word: '精神' },
+          { char: '睛', word: '眼睛' },
+        ],
+      },
+      {
+        main: '襄',
+        options: [
+          { char: '讓', word: '讓位' },
+          { char: '鑲', word: '鑲嵌' },
+          { char: '壤', word: '土壤' },
+          { char: '襄', word: '襄助' },
+        ],
+      },
+      {
+        main: '木',
+        options: [
+          { char: '林', word: '森林' },
+          { char: '樣', word: '樣子' },
+          { char: '標', word: '座標' },
+          { char: '村', word: '村里' },
+        ],
+      },
+      {
+        main: '水',
+        options: [
+          { char: '河', word: '河流' },
+          { char: '洗', word: '洗衣' },
+          { char: '淚', word: '眼淚' },
+          { char: '海', word: '海洋' },
+          { char: '湖', word: '湖泊' },
+        ],
+      },
+      {
+        main: '心',
+        options: [
+          { char: '情', word: '心情' },
+          { char: '怕', word: '害怕' },
+          { char: '怒', word: '憤怒' },
+          { char: '忘', word: '忘記' },
+          { char: '感', word: '感謝' },
+        ],
+      },
+      {
+        main: '草',
+        options: [
+          { char: '草', word: '花草' },
+          { char: '茶', word: '綠茶' },
+          { char: '苗', word: '樹苗' },
+          { char: '莓', word: '草莓' },
+          { char: '菜', word: '高麗菜' },
+        ],
+      },
+      {
+        main: '言',
+        options: [
+          { char: '話', word: '談話' },
+          { char: '記', word: '記住' },
+          { char: '語', word: '語言' },
+          { char: '誠', word: '誠實' },
+          { char: '謝', word: '謝謝' },
+        ],
+      },
+      {
+        main: '火',
+        options: [
+          { char: '煮', word: '煮飯' },
+          { char: '燒', word: '燒焦' },
+          { char: '煙', word: '冒煙' },
+          { char: '爆', word: '爆炸' },
+          { char: '炮', word: '火炮' },
+        ],
+      },
+      {
+        main: '風',
+        options: [
+          { char: '風', word: '風車' },
+          { char: '颱', word: '颱風' },
+          { char: '飆', word: '飆車' },
+          { char: '楓', word: '楓葉' },
+          { char: '瘋', word: '發瘋' },
+        ],
+      },
+    ];
+
+    function speakText(text) {
+      window.speechSynthesis.cancel(); // 取消前一段語音
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.lang = 'zh-TW';
+      window.speechSynthesis.speak(msg);
+    }
+
+    function startSteps() {
+      if (hasStarted) return;
+      hasStarted = true;
+      document.getElementById('stepContainer').style.display = 'flex';
+      const firstStep = document.querySelector('.step-box');
+      if (firstStep) {
+        firstStep.classList.add('active');
+        const char = firstStep.querySelector('.step-character').innerText;
+        const word = firstStep.querySelector('.step-word').innerText;
+        speakText(char);
+        speakText(word);
+        speakText('請輸入詞語');
+      }
+    }
+
+    function nextStep(step) {
+      const current = document.getElementById(`step${step}`);
+      const input = current.querySelector('.input-box');
+      const correct = current.querySelector('.step-word').innerText;
+
+      if (input.value.trim() !== correct) {
+        alert('輸入錯誤，請再試一次！');
+        speakText('請再試一次');
+        return;
+      }
+
+      const next = document.getElementById(`step${step + 1}`);
+      current.classList.remove('active');
+      if (next) {
+        next.classList.add('active');
+        const char = next.querySelector('.step-character').innerText;
+        const word = next.querySelector('.step-word').innerText;
+        speakText(char);
+        speakText(word);
+        speakText('請輸入詞語');
+      }
+    }
+
+    function finishSteps() {
+      const current = document.querySelector('.step-box.active');
+      const input = current.querySelector('.input-box');
+      const correct = current.querySelector('.step-word').innerText;
+      if (input.value.trim() !== correct) {
+        alert('輸入錯誤，請再試一次！');
+        speakText('請再試一次');
+        return;
+      }
+      speakText('恭喜完成！');
+      const feedback = document.createElement('div');
+      feedback.className = 'success-feedback';
+      feedback.innerText = '🎉 恭喜你完成本題！';
+      document.body.appendChild(feedback);
+      document.querySelector('.home-button').style.display = 'block';
+    }
+
+    function goHome() {
+      hasStarted = false;
+      const oldFeedback = document.querySelector('.success-feedback');
+      if (oldFeedback) oldFeedback.remove();
+      replaceWords();
+      resetSteps();
+    }
+
+    function replaceWords() {
+      const group = wordGroups[groupIndex];
+      document.getElementById('mainChar').innerText = group.main;
+
+      const optionsContainer = document.getElementById('optionsContainer');
+      const stepContainer = document.getElementById('stepContainer');
+      optionsContainer.innerHTML = '';
+      stepContainer.innerHTML = '';
+
+      group.options.forEach((opt, i) => {
+        const option = document.createElement('div');
+        option.className = 'option-box';
+        option.setAttribute('tabindex', '0');
+        option.setAttribute('role', 'button');
+        option.innerHTML = `<span>${opt.char}</span><span class="word-text">${opt.word}</span>`;
+        option.onclick = startSteps;
+        optionsContainer.appendChild(option);
+
+        const stepBox = document.createElement('div');
+        stepBox.className = 'step-box';
+        stepBox.id = `step${i + 1}`;
+        stepBox.innerHTML = `
+          <div class="step-character">${opt.char}</div>
+          <div class="step-word">${opt.word}</div>
+          <input class="input-box" aria-label="詞語輸入" type="text" placeholder="請輸入詞語" oninput="updateDisplay(this, 'display${i + 1}')" />
+          <div id="display${i + 1}" class="display-area"></div>
+          <button onclick="${i + 1 === group.options.length ? 'finishSteps()' : `nextStep(${i + 1})`}">${i + 1 === group.options.length ? '完成' : '下一步'}</button>
+        `;
+        stepContainer.appendChild(stepBox);
+      });
+
+      groupIndex = (groupIndex + 1) % wordGroups.length;
+    }
+
+    function resetSteps() {
+      currentStep = 0;
+      document.querySelector('.home-button').style.display = 'none';
+
+      const steps = document.querySelectorAll('.step-box');
+      steps.forEach(stepBox => {
+        stepBox.classList.remove('active');
+        const display = stepBox.querySelector('.display-area');
+        if (display) display.innerText = '';
+        const input = stepBox.querySelector('.input-box');
+        if (input) input.value = '';
+      });
+
+      const firstStep = document.querySelector('.step-box');
+      if (firstStep) {
+        firstStep.classList.add('active');
+        const char = firstStep.querySelector('.step-character').innerText;
+        const word = firstStep.querySelector('.step-word').innerText;
+        speakText(char);
+        speakText(word);
+        speakText('請輸入詞語');
+      }
+
+      document.getElementById('stepContainer').style.display = 'flex';
+    }
+
+    function updateDisplay(input, displayId) {
+      document.getElementById(displayId).innerText = input.value;
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timer++;
+        document.getElementById('timer').innerText = `時間：${timer} 秒`;
+      }, 1000);
+    }
+
+    replaceWords();
+    startTimer();
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
